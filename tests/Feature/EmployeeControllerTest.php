@@ -92,9 +92,7 @@ class EmployeeControllerTest extends TestCase
         $data = [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-            'password' => 'NewPass@123',
-            'password_confirmation' => 'NewPass@123',
-            'role' => 'admin',
+            'user' => ['role' => 'admin'],
             'senior' => true
         ];
 
@@ -114,9 +112,7 @@ class EmployeeControllerTest extends TestCase
         $data = [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-            'password' => 'NewPass@123',
-            'password_confirmation' => 'NewPass@123',
-            'role' => 'admin',
+            'user' => ['role' => 'admin'],
             'senior' => false,
             'supervisor_id' => $supervisor->id
         ];
@@ -129,29 +125,6 @@ class EmployeeControllerTest extends TestCase
             ]);
     }
 
-    // public function testUpdateEmployeeFromSeniorToRegularWithValidData()
-    // {
-    //     $supervisor = Employee::factory()->create();
-    //     $employee = Employee::factory()->nonSenior($supervisor->id)->create();
-
-    //     $data = [
-    //         'name' => 'Updated Name',
-    //         'email' => 'updated@example.com',
-    //         'password' => 'NewPass@123',
-    //         'password_confirmation' => 'NewPass@123',
-    //         'role' => 'admin',
-    //         'senior' => false,
-    //         'supervisor_id' => $employee->id
-    //     ];
-
-    //     $response = $this->put('/api/employees/' . $supervisor->id, $data);
-
-    //     $response->assertStatus(200)
-    //         ->assertJson([
-    //             'message' => 'Employee updated successfully!',
-    //         ]);
-    // }
-
     public function testUpdateEmployeeFromRegularToSeniorWithValidData()
     {
         $supervisor = Employee::factory()->create();
@@ -160,9 +133,7 @@ class EmployeeControllerTest extends TestCase
         $data = [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-            'password' => 'NewPass@123',
-            'password_confirmation' => 'NewPass@123',
-            'role' => 'admin',
+            'user' => ['role' => 'admin'],
             'senior' => true,
             'supervisor_id' => null
         ];
@@ -185,12 +156,25 @@ class EmployeeControllerTest extends TestCase
     public function testDeleteEmployee()
     {
         $employee = Employee::factory()->create();
+        $one = Employee::factory()->nonSenior($employee->id)->create();
+
+        $response = $this->delete('/api/employees/' . $one->id);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Deleted successfully!',
+            ]);
+    }
+
+    public function testDeleteSeniorEmployee()
+    {
+        $employee = Employee::factory()->create();
 
         $response = $this->delete('/api/employees/' . $employee->id);
 
         $response->assertStatus(200)
             ->assertJson([
-                'message' => 'Deleted successfully!',
+                'message' => 'Can not delete Senior Supervisor, set a different one first.',
             ]);
     }
 
