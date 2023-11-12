@@ -11,7 +11,7 @@ class EmployeeController extends Controller
 {
     function index()
     {
-        $employees = Employee::with(['supervisor', 'user'])->get();
+        $employees = Employee::with(['supervisor', 'user'])->orderByRaw('-senior ASC')->get();
 
         return response()->json($employees);
     }
@@ -19,7 +19,7 @@ class EmployeeController extends Controller
     function employeeSupervisor()
     {
 
-        $employees = Employee::with(['supervisor'])->get();
+        $employees = Employee::with(['supervisor'])->orderByRaw('-senior ASC')->get();
 
         foreach ($employees as $employee) {
             $subordinates = $employee->getNestedSubordinates($employee);
@@ -32,7 +32,7 @@ class EmployeeController extends Controller
     function show($id)
     {
         try {
-            $employee = Employee::with(['supervisor'])->findOrFail($id);
+            $employee = Employee::with(['supervisor', 'user'])->findOrFail($id);
 
             return response()->json($employee);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -102,14 +102,9 @@ class EmployeeController extends Controller
                     'string',
                     'confirmed', // Requires a matching password_confirmation field
                 ],
-                'role' => 'required|in:admin,user',
             ]);
 
-            if ($data['password']) {
-                $hashed = Hash::make($data['password']);
-                $data['password'] = $hashed;
-            }
-
+            $data['role'] = $request['user']['role'];
             $user->update($data);
             $employee->update($data);
 
@@ -142,9 +137,16 @@ class EmployeeController extends Controller
 
             $employee = Employee::findOrFail($id);
 
-            $employee->delete();
+            if ($employee->senior) {
+                return response()->json(['message' => 'Can not delete Senior Supervisor, set a different one first.']);
+            }
 
-            return response()->json(['message' => 'Deleted successfully!'], 200);
+            $subordinates = Employee::where('supervisor_id', $employee->id);
+
+            $user = $employee->user();
+            $user->delete();
+
+            return response()->json(['message' => 'Deleted successfully!', 'sub' => $subordinates], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['errors' => 'Couldn\'t delete, employee not found', 'back' => false], 404);
         } catch (\Exception $e) {
