@@ -27,11 +27,25 @@ class DatabaseSeeder extends Seeder
         // $three = \App\Models\Employee::factory()->nonSenior($rootEmployee->id)->create();
         // $four = \App\Models\Employee::factory()->nonSenior($three->id)->create();
 
-        $user = \App\Models\User::create([
+        $admin = \App\Models\User::create([
             "name" => "Admin",
             "email" => "admin@example.com",
             "password" => Hash::make('password'),
             "role" => "admin",
+
+        ]);
+        \App\Models\Employee::create([
+            "name" => $admin->name,
+            "email" => $admin->email,
+            "senior" => true,
+            "user_id" => $admin->id
+        ]);
+
+        $user = \App\Models\User::create([
+            "name" => "User",
+            "email" => "user@example.com",
+            "password" => Hash::make('password'),
+            "role" => "user",
 
         ]);
         \App\Models\Employee::create([
