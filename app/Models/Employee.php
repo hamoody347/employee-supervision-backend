@@ -109,4 +109,24 @@ class Employee extends Model
 
         return $chain ?: []; // If $chain is falsy (has no subordinates), return an empty array
     }
+
+    public function getNestedSubordinates($employee, $subordinates = [])
+    {
+        $employeeId = $employee->id;
+
+        // Add the current employee to the list of subordinates
+        $subordinates[] = $employeeId;
+
+        // Get all direct subordinates of the given employee
+        $empSubordinates = $employee->subordinates;
+
+        foreach ($empSubordinates as $subordinate) {
+            // If the subordinate is not in the list, add it and recursively get its subordinates
+            if (!in_array($subordinate->id, $subordinates)) {
+                $subordinates = $this->getNestedSubordinates($subordinate, $subordinates);
+            }
+        }
+
+        return $subordinates;
+    }
 }

@@ -16,6 +16,19 @@ class EmployeeController extends Controller
         return response()->json($employees);
     }
 
+    function employeeSupervisor()
+    {
+
+        $employees = Employee::with(['supervisor'])->get();
+
+        foreach ($employees as $employee) {
+            $subordinates = $employee->getNestedSubordinates($employee);
+            $possibleSupervisors = Employee::whereNotIn('id', $subordinates)->get();
+            $employee['supervisors'] = $possibleSupervisors;
+        }
+        return response()->json($employees);
+    }
+
     function show($id)
     {
         try {
@@ -147,6 +160,37 @@ class EmployeeController extends Controller
             return response()->json(['message' => 'Organizational Chart Generated.', 'data' => $chart]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to generate chart', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    function setSupervisor(Request $request)
+    {
+        try {
+
+            $employee = Employee::findOrFail($request->id);
+
+            $employee->setSupervisor($request->supervisor_id);
+            $employee->save();
+
+            return response()->json(['message' => 'Employee supervisor updated successfully!'], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['errors' => 'Employee not found!', 'back' => false], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    function getSupervisors($id)
+    {
+        try {
+            $employee = Employee::find($id);
+            $subordinates = $employee->getNestedSubordinates($employee);
+
+            $possibleSupervisors = Employee::whereNotIn('id', $subordinates)->get();
+
+            return response()->json($possibleSupervisors, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed', 'error' => $e->getMessage()], 500);
         }
     }
 }
